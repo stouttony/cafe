@@ -1,5 +1,3 @@
-(defpackage :st.orm
-	(:use :postmodern :cl :cl-ppcre))
 
 
 (in-package :st.orm)
@@ -20,9 +18,3 @@
 (defmacro defschema (name &optional (prefix "st.db."))
 	`(defpackge ,(intern (schema/package-name name prefix) "KEYWORD")
 			 (:use :postmodern :cl)))
-
-
-(defclass db-object ()
-	((key-values :initform (make-hash-table))))
-
-(defmacro deftable-class (table-name schema w
