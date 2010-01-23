@@ -1,6 +1,7 @@
 (defpackage :st.tools
 	(:use :cl)
-	(:export :defglobal))
+	(:export :defglobal
+					 :plist/alist))
 
 (in-package :st.tools)
 
@@ -13,3 +14,12 @@
 		`(let ((,val ,value))
 			 (defun ,name ()
 				 ,val))))
+
+(defun plist/alist (plist)
+	(labels ((get-one (dst src)
+						 (if src
+								 (get-one (cons (cons (car src) (cadr src))
+																dst)
+													(cddr src))
+								 dst)))
+		(nreverse (get-one nil plist))))
