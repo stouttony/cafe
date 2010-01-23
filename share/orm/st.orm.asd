@@ -1,6 +1,6 @@
 (defsystem "st.orm"
-	:description "Stout Tonny ORM system"
-	:version "0.0.1-dev"
+	:description "Stout Tony ORM system"
+	:version "0.0.1"
 	:author "Pavel G. Koukoushkin <k.pavel.g@gmail.com>"
 	:license "BSD"
 	:depends-on ("postmodern" "cl-ppcre")
