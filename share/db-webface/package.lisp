@@ -1,2 +1,2 @@
-(defpackage :st.db-webface
-	(:use :st.orm :restas))
+(restas:defsite :st.db-webface
+		(:use :cl :st.orm))

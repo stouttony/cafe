@@ -41,26 +41,27 @@
 									`(or keyword ,(getf field-def :type))
 									(getf field-def :type))
 							:reader (db/symbol (getf field-def :name)))))
-			(defmethod initialize-instance :after ((object ,(db/symbol name)) &rest values)
+			(defmethod initialize-instance :after ((object ,(db/symbol name)) &key (need-insert t) &allow-other-keys)
 				,@(cons
 					 (let ((fd-has-default (remove-if-not (lambda (x) (getf x :has-default)) field-defs)))
-						 `(let ((returned
-										 (query (:insert-into ',(db/symbol name) :set
-																					,@(loop for fd in field-defs append
-																								 `(',(db/symbol (getf fd :name))
-																										 ,(if (and (not (getf fd :is-nullable))
-																															 (getf fd :has-default))
-																													`(if (eq (,(db/symbol (getf fd :name)) object) :null)
-																															 :default
-																															 (,(db/symbol (getf fd :name)) object))
-																													`(,(db/symbol (getf fd :name)) object))))
-																					,@(when fd-has-default
-																									`(:returning
-																										,@(loop for fd in fd-has-default collect `',(db/symbol (getf fd :name)))))))))
-								,@(loop for i from 0
-										 for fd in fd-has-default
+						 `(when need-insert
+								(let ((returned
+											 (query (:insert-into ',(db/symbol name) :set
+																						,@(loop for fd in field-defs append
+																									 `(',(db/symbol (getf fd :name))
+																											 ,(if (and (not (getf fd :is-nullable))
+																																 (getf fd :has-default))
+																														`(if (eq (,(db/symbol (getf fd :name)) object) :null)
+																																 :default
+																																 (,(db/symbol (getf fd :name)) object))
+																														`(,(db/symbol (getf fd :name)) object))))
+																						,@(when fd-has-default
+																										`(:returning
+																											,@(loop for fd in fd-has-default collect `',(db/symbol (getf fd :name)))))))))
+									,@(loop for i from 0
+											 for fd in fd-has-default
 											 collect
-											 `(setf (slot-value object ',(db/symbol (getf fd :name))) (nth ,i (car returned))))))
+												 `(setf (slot-value object ',(db/symbol (getf fd :name))) (nth ,i (car returned)))))))
 					 (let ((keys (mapcar (lambda (fd)
 																 (getf fd :name))
 															 (remove nil field-defs :key (lambda (x) (getf x :is-key))))))
@@ -68,6 +69,20 @@
 											 `(setf (gethash ,(db/symbol key "KEYWORD") (key-values object))
 															(,(db/symbol key) object)))
 										 keys))))
+			(defmacro ,(db/symbol (concatenate 'string "select-" name)) (s-sql-condition)
+				`(let ((result
+								(query (:select ,,@(mapcar (lambda (fd) `'',(db/symbol (getf fd :name))) field-defs)
+																:from
+																',',(db/symbol name) ,@(when s-sql-condition `(:where ,s-sql-condition))))))
+					 (mapcar
+						(lambda (row)
+							(make-instance ',',(db/symbol name)
+														 ,,@(loop for i from 0
+																	 for fd in field-defs
+																	 append
+																		 `(',(db/symbol (getf fd :name) "KEYWORD") '(nth ,i row)))
+														 :need-insert nil))
+						result)))
 			,@(mapcar (lambda (field-def)
 									`(defmethod (setf ,(db/symbol (getf field-def :name)))
 											 (value (object ,(db/symbol name)))
