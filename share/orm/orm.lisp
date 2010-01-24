@@ -1,16 +1,5 @@
 (in-package :st.orm)
 
-(defun db/lisp (string)
-	(string-upcase (regex-replace-all "_" string "-")))
-
-(defun db/symbol (name &optional package)
-	(intern (db/lisp name)
-					(or package
-							(sb-int:sane-package))))
-
-(defun keyword/db (kw)
-	(subseq	(symbol-name kw) 1))
-
 (defclass db-object ()
 	((key-values :initform (make-hash-table)
 							 :reader key-values)))
@@ -20,6 +9,12 @@
 					(loop for keyfield being the hash-keys in (key-values obj)
 						 using (hash-value value) append
 							 (list (keyword/db keyfield) value))))
+
+(defgeneric select (name additional-clauses))
+
+(defgeneric delete-orm (object))
+
+(defgeneric delete-query (object))
 
 (defmacro deftable (name field-defs)
 	`(tagbody
@@ -83,6 +78,39 @@
 																		 `(',(db/symbol (getf fd :name) "KEYWORD") '(nth ,i row)))
 														 :need-insert nil))
 						result)))
+			(defmethod st.orm::delete-orm ((object ,(db/symbol name)))
+				(query (:delete-from ',(db/symbol name)
+														 :where
+														 (:and
+															,@(loop for fd in field-defs
+																	 if (getf fd :is-key) collect
+																		 `(:= ',(db/symbol (getf fd :name))
+																					(gethash ,(db/symbol (getf fd :name) "KEYWORD") (key-values object))))))))
+			(defmethod st.orm::delete-query ((object ,(db/symbol name)))
+				(sql
+				 (:delete-from ',(db/symbol name)
+											 :where
+											 (:and
+												,@(loop for fd in field-defs
+														 if (getf fd :is-key) collect
+															 `(:= ',(db/symbol (getf fd :name))
+																		(gethash ,(db/symbol (getf fd :name) "KEYWORD") (key-values object))))))))
+			(defmethod st.orm::select-orm ((type (eql ,(db/symbol name "KEYWORD"))) additional-clauses)
+				(let ((result
+							 (query (format nil "~a~@[ where ~a~]"
+															,(format nil "select ~{~a~#[~:;, ~]~} from ~a"
+																			 (mapcar (lambda (x) (getf x :name)) field-defs)
+																			 name)
+															additional-clauses))))
+					(mapcar
+					 (lambda (row)
+						 (make-instance ',(db/symbol name)
+														,@(loop for i from 0
+																 for fd in field-defs
+																 append
+																	 `(,(db/symbol (getf fd :name) "KEYWORD") (nth ,i row)))
+														:need-insert nil))
+					 result)))
 			,@(mapcar (lambda (field-def)
 									`(defmethod (setf ,(db/symbol (getf field-def :name)))
 											 (value (object ,(db/symbol name)))

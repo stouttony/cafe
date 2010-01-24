@@ -3,7 +3,7 @@
 	:version "0.0.1"
 	:author "Pavel G. Koukoushkin <k.pavel.g@gmail.com>"
 	:license "BSD"
-	:depends-on ("postmodern" "cl-ppcre")
+	:depends-on ("postmodern" "cl-ppcre" "st.tools")
 	:components
 	((:file "package")
 	 (:file "schema-extractor" :depends-on ("package"))

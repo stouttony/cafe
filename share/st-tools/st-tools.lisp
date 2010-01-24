@@ -1,9 +1,25 @@
 (defpackage :st.tools
-	(:use :cl)
+	(:use :cl :cl-ppcre)
 	(:export :defglobal
-					 :plist/alist))
+					 :plist/alist
+					 :db/lisp
+					 :db/symbol
+					 :keyword/db))
 
 (in-package :st.tools)
+
+
+
+(defun db/lisp (string)
+	(string-upcase (regex-replace-all "_" string "-")))
+
+(defun db/symbol (name &optional package)
+	(intern (db/lisp name)
+					(or package
+							(sb-int:sane-package))))
+
+(defun keyword/db (kw)
+	(subseq	(symbol-name kw) 1))
 
 
 (defmacro defglobal (name value)

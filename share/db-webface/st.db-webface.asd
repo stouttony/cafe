@@ -3,8 +3,8 @@
 	:version "0.0.1-dev"
 	:author "Pavel G. Koukoushkin <k.pavel.g@gmail.com>"
 	:license "BSD"
-	:depends-on ("postmodern" "st.orm" "restas")
+	:depends-on ("postmodern" "st.orm" "restas" "cl-who")
 	:components
-	((:file "package.lisp"
-	 (:file "db-webface.lisp" :depends-on ("package")))))
+	((:file "package")
+	 (:file "db-webface" :depends-on ("package"))))
 	
