@@ -22,7 +22,7 @@
 	(subseq	(symbol-name kw) 1))
 
 
-(defmacro defglobal (name value)
+(defmacro define-global (name value)
 	"Creates function that returns value.
 	I make for as replacement of `defvar` cause dynamically variables are
 	thread-local"
